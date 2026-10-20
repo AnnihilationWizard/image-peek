@@ -1,0 +1,14 @@
+image-peek adapts code from two MIT-licensed mods:
+
+- jarrodwatts/claude-image-view, commit 370b8e7bc0708bebe9762e63534f7ca18bc3e802:
+  the PNG decoder (hooks/png.ts), the tile layout, terminal detection and
+  half-block drawing (hooks/layout.ts), and the paste-cache lookup and polling
+  in hooks/register.tsx. Copyright (c) 2026 Jarrod Watts.
+  https://github.com/jarrodwatts/claude-image-view
+
+- GGGODLIN/cc-mod-image-view, commit 1544b15355515e240af30b3aa7cd8b3b0a899591:
+  the image buttons under sent prompts with hover cards, the zoom pane, and
+  fitBox / buttonOffsets in hooks/layout.ts. Copyright (c) 2026 gggodlin.
+  https://github.com/GGGODLIN/cc-mod-image-view
+
+See LICENSE.
