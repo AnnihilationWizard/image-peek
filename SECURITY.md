@@ -8,7 +8,7 @@ image-peek only changes what Claude Code draws in the terminal. These notes desc
 - It lists Claude Code's temp folder to find the current session's paste cache, and reads each pasted image (up to Claude Code's 4 MiB read limit) to get its size and draw half-block thumbnails.
 - It runs `id -u` once to find that temp folder, and `sips` to convert non-PNG pastes and shrink large screenshots, writing PNG copies into the same session folder (`image-peek-<n>.png`, `image-peek-small-<n>.png`). It deletes nothing; the folder is Claude Code's.
 - When you press `↗ original`, it runs `open` (or `xdg-open`) on the pasted file.
-- It keeps the session's sent prompts that carried images, their image paths, and the image shown in the pane in session state, and one flag in its own store so the Herdr hint shows once.
+- It keeps the sent prompts that carried images, with their image paths, in session state and in its own store (a JSON file under your Claude Code configuration directory), so the buttons come back after `/resume`. The store holds the last 500 such prompts, their text included, across sessions; delete the plugin's store file to clear it. It also keeps the image shown in the pane in session state, and one flag in the store so the Herdr hint shows once.
 - It reads terminal variables (`TERM`, `TERM_PROGRAM`, `TMUX`, `HERDR_ENV` and similar) to tell which kind of thumbnail Claude Code can draw.
 - It makes no network requests, calls no model, changes no settings and does not alter the prompt or what the model reads.
 

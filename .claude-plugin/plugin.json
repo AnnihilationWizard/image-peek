@@ -1,6 +1,6 @@
 {
   "name": "image-peek",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "See the images you paste into Claude Code: thumbnails above the prompt, and an image button under each sent prompt that opens it large",
   "author": {
     "name": "AnnihilationWizard",

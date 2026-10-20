@@ -13,6 +13,9 @@ const POLL_MS = 200
 const PANE = 'image-peek'
 // Sent prompts kept for their buttons; older ones lose them.
 const MAX_SENT = 200
+// Sent prompts kept on disk across sessions, newest last.
+const MAX_STORED = 500
+const STORE_SENT = 'sent'
 // Longest side, in pixels, of the decoded copy half blocks are drawn from.
 const TILE_SIDE = 96
 const ZOOM_SIDE = 320
@@ -213,7 +216,32 @@ async function remember($: EngineInterface, text: string, attached: number) {
   const list: PastedImage[] = []
   for (const n of numbers) list.push(await describe($, dir, n))
   if (list.every(image => image.path === null)) return
-  await update($, sent, all => [...all, { text: text.trim(), images: list }].slice(-MAX_SENT))
+  const entry: SentPrompt = { text: text.trim(), images: list, sessionId: await $.session.id() }
+  await update($, sent, all => [...all, entry].slice(-MAX_SENT))
+  // Kept on disk too, so the buttons come back after /resume (session state lives in memory only).
+  await $.store.set(STORE_SENT, [...(await storedSent($)), entry].slice(-MAX_STORED))
+}
+
+/** The sent prompts kept in the store, across sessions; anything malformed is dropped. */
+async function storedSent($: EngineInterface): Promise<SentPrompt[]> {
+  const value = await $.store.get(STORE_SENT).catch(() => undefined)
+  if (!Array.isArray(value)) return []
+  return value.filter(
+    (entry): entry is SentPrompt =>
+      typeof entry === 'object' && entry !== null && typeof entry.text === 'string' && Array.isArray(entry.images),
+  )
+}
+
+// Prompts sent in other sessions, loaded at session start: a session resumed with --fork-session
+// gets a new id, so its earlier prompts are found here.
+let otherSessions: SentPrompt[] = []
+// Whether each picture's file is still there; Claude Code's paste cache is emptied by a reboot.
+const present = new Map<string, boolean>()
+
+async function stillThere($: EngineInterface, image: PastedImage): Promise<boolean> {
+  if (image.path === null) return false
+  if (!present.has(image.path)) present.set(image.path, await $.fs.exists(image.path).catch(() => false))
+  return present.get(image.path)!
 }
 
 // The terminal's table: it has Image and Raster, which every hook here draws only after checking the surface.
@@ -252,6 +280,13 @@ export const register: Register = on => {
     const env = await terminalEnv($)
     pictures = drawsPictures(env)
     if (e.surface === 'terminal') await hintHerdr($, env).catch(() => undefined)
+    // After /resume the session state is empty: bring this session's sent prompts back from the store.
+    const sessionId = await $.session.id()
+    const stored = await storedSent($)
+    otherSessions = stored.filter(entry => entry.sessionId !== sessionId)
+    const mine = stored.filter(entry => entry.sessionId === sessionId)
+    // A hot reload keeps the state, which already holds them.
+    if (mine.length > 0) await update($, sent, all => (all.length > 0 ? all : mine.slice(-MAX_SENT)))
     $.clock.every(POLL_MS, () => check($))
     return next(e)
   })
@@ -301,8 +336,10 @@ export const register: Register = on => {
 
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
     if (e.surface !== 'terminal' || e.props.origin.kind !== 'composer') return next(e)
-    const entry = sentFor(await read($, sent), e.props.text)
-    const list = entry?.images.filter(image => image.path !== null) ?? []
+    // This session's prompts first; then other sessions', for a prompt from before a fork.
+    const entry = sentFor(await read($, sent), e.props.text) ?? sentFor(otherSessions, e.props.text)
+    const list: PastedImage[] = []
+    for (const image of entry?.images ?? []) if (await stillThere($, image)) list.push(image)
     if (list.length === 0) return next(e)
 
     const el = $.ui.resolve(e)

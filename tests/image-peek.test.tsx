@@ -303,3 +303,69 @@ test('in Herdr with pictures forced the band draws the real picture and no hint'
   expect(await ui.find({ type: 'Image' })).toBeDefined()
   expect(toasts).toEqual([])
 })
+
+const storedEntry = (sessionId: string, path = `${DIR}/1.png`) => ({
+  text: 'look [Image #1]',
+  images: [{ n: 1, path, size: { width: 4, height: 2 }, original: path }],
+  sessionId,
+})
+
+test('after /resume a sent prompt gets its button back from the store', async ($, on) => {
+  const clock = mock.clock(on)
+  // What the session wrote before it was closed; the session state starts empty.
+  mock.store(on, { sent: [storedEntry('sess-1')] })
+  engine(on, ITERM, () => '')
+
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await clock.advance(200)
+
+  const row = await $.ui.mount({ ...userRow('look [Image #1]'), surface: 'terminal' })
+  expect(await row.find({ type: 'Button', key: 'image-peek:open:1' })).toBeDefined()
+})
+
+test('a prompt from before a --fork-session resume is found under the old session id', async ($, on) => {
+  const clock = mock.clock(on)
+  mock.store(on, { sent: [storedEntry('old-session')] })
+  engine(on, ITERM, () => '')
+
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await clock.advance(200)
+
+  const row = await $.ui.mount({ ...userRow('look [Image #1]'), surface: 'terminal' })
+  expect(await row.find({ type: 'Button', key: 'image-peek:open:1' })).toBeDefined()
+})
+
+test('a stored prompt whose cached file is gone gets no button', async ($, on) => {
+  const clock = mock.clock(on)
+  mock.store(on, { sent: [storedEntry('sess-1', `${DIR}/9.png`)] })
+  engine(on, ITERM, () => '')
+
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await clock.advance(200)
+
+  const row = await $.ui.mount({ ...userRow('look [Image #1]'), surface: 'terminal' })
+  expect(await row.find({ type: 'Button' })).toBeUndefined()
+  expect(await row.find({ type: 'Text', text: 'engine row' })).toBeDefined()
+})
+
+test('sending a prompt with an image keeps it in the store with its session id', async ($, on) => {
+  const clock = mock.clock(on)
+  const store = new Map<string, unknown>()
+  on('store.get', ($, e) => ({ value: store.get(e.key) }))
+  on('store.set', ($, e) => {
+    store.set(e.key, e.value)
+    return { value: undefined }
+  })
+  engine(on, ITERM, () => 'look [Image #1]')
+
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await clock.advance(200)
+  await $.prompt.submit({
+    text: 'look [Image #1]',
+    attachments: [{ type: 'image', mediaType: 'image/png' }],
+    origin: { kind: 'composer' },
+    wait: false,
+  })
+
+  expect(store.get('sent')).toMatchObject([{ text: 'look [Image #1]', sessionId: 'sess-1', images: [{ n: 1, path: `${DIR}/1.png` }] }])
+})

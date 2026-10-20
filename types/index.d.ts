@@ -9,7 +9,12 @@ export type PastedImage = {
 }
 
 /** A prompt the person sent, as its row shows it, with the pictures it carried. */
-export type SentPrompt = { text: string; images: PastedImage[] }
+export type SentPrompt = {
+  text: string
+  images: PastedImage[]
+  /** The session it was sent in; also kept in the mod's store so /resume finds it. */
+  sessionId?: string
+}
 
 declare module 'claude-code' {
   interface PluginState {

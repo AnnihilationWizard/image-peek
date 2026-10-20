@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.0] - 2026-10-20
+
+- Buttons under sent prompts come back after `/resume`, including `--fork-session`: sent prompts with images are now also kept in the mod's store (the last 500).
+- A button is left out when its image is no longer in Claude Code's paste cache, for example after a reboot.
+- Prompts sent with 1.0.0 were not stored, so they still get no button after `/resume`.
+
 ## [1.0.0] - 2026-10-20
 
 Initial release of image-peek by AnnihilationWizard.
@@ -17,4 +23,5 @@ Initial release of image-peek by AnnihilationWizard.
 
 Adapted from jarrodwatts/claude-image-view and GGGODLIN/cc-mod-image-view (MIT). Built on Claude Code's early-access function-hooks mod API.
 
+[1.1.0]: https://github.com/AnnihilationWizard/image-peek/releases/tag/v1.1.0
 [1.0.0]: https://github.com/AnnihilationWizard/image-peek/releases/tag/v1.0.0

@@ -6,11 +6,11 @@
 </p>
 
 <p align="center">
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Version-1.0.0-green.svg" alt="Version 1.0.0"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Version-1.1.0-green.svg" alt="Version 1.1.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License"></a>
   <a href="https://code.claude.com/docs"><img src="https://img.shields.io/badge/Platform-Claude%20Code-D97757.svg" alt="Platform: Claude Code"></a>
   <a href="hooks/register.tsx"><img src="https://img.shields.io/badge/Type-Function%20hooks%20mod-6E7681.svg" alt="Function hooks mod"></a>
-  <a href="tests/image-peek.test.tsx"><img src="https://img.shields.io/badge/Tests-16%20passing-3FB950.svg" alt="16 tests passing"></a>
+  <a href="tests/image-peek.test.tsx"><img src="https://img.shields.io/badge/Tests-20%20passing-3FB950.svg" alt="20 tests passing"></a>
 </p>
 
 <p align="center">
@@ -88,7 +88,7 @@ Hover and clicks need Claude Code's fullscreen layout, which is on by default. W
 
 ### Limitations
 
-- Only prompts sent while the mod is loaded get buttons. Earlier prompts, sessions resumed with `/resume`, and pastes whose cache was cleared (Claude Code keeps them in a temp folder that a reboot empties) have none.
+- Only prompts sent while the mod (1.1.0 or later) is loaded get buttons. They come back after `/resume`, including `--fork-session`, as long as Claude Code's paste cache still holds the images: it is a temp folder that a reboot empties, and then the buttons are left out.
 - Converting non-PNG images and shrinking large screenshots uses `sips`, so on Linux and Windows those images show `no preview`. PNG pastes work everywhere.
 - Opening the original runs `open` (macOS) or `xdg-open` (Linux).
 - The desktop app already previews pasted images, so the mod draws nothing there.
