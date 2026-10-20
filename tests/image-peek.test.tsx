@@ -40,11 +40,14 @@ const userRow = (text: string) =>
   }) as const
 
 /** The engine beneath the mod: one session whose paste cache holds 1.png, in the terminal `env` names. */
-function engine(on: On, env: Record<string, string>, draft: () => string, opened: string[] = []) {
+function engine(on: On, env: Record<string, string>, draft: () => string, opened: string[] = [], runs: string[][] = []) {
   on('session.start', () => ({ cwd: '/work' }))
   on('prompt.read', () => ({ value: { text: draft(), cursor: draft().length } }))
   on('env.get', ($, e) => ({ value: env[e.name] }))
-  on('process.run', () => ran('501\n'))
+  on('process.run', ($, e) => {
+    runs.push([...e.argv])
+    return ran('501\n')
+  })
   on('session.id', () => ({ value: 'sess-1' }))
   on('fs.list', () => ({ value: [dirEntry] }))
   on('fs.exists', ($, e) => ({ value: e.path === DIR || e.path === `${DIR}/1.png` }))
@@ -127,6 +130,22 @@ test('in iTerm2 a pasted image shows as half blocks above the prompt and clears 
   const after = await $.ui.mount({ ...BAND, surface: 'terminal' })
   expect(await after.find({ type: 'Raster' })).toBeUndefined()
   expect(await after.find({ type: 'Text', text: 'engine row' })).toBeDefined()
+})
+
+test('a tile above the prompt opens the original when its label is pressed', async ($, on) => {
+  const clock = mock.clock(on)
+  const runs: string[][] = []
+  engine(on, GHOSTTY, () => 'see [Image #1] [Image #2]', [], runs)
+
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await clock.advance(200)
+
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  await ui.press({ key: 'image-peek:draft:1' })
+  expect(runs.at(-1)).toEqual(['open', `${DIR}/1.png`])
+  // #2 has no cached file, so its label is plain text, not a button.
+  expect(await ui.find({ type: 'Button', key: 'image-peek:draft:2' })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: '#2' })).toBeDefined()
 })
 
 test('in Ghostty the band draws the real picture from the cached file', async ($, on) => {

@@ -5,6 +5,7 @@
 Initial release of image-peek by AnnihilationWizard.
 
 - Thumbnail row above the prompt for each `[Image #n]` in the draft, shown right after a paste and cleared when the prompt is sent or the tags are deleted; tiles keep the picture's shape, shrink to fit the band and end in `+N` when there are too many.
+- `↗ #n` under each tile above the prompt opens the pasted file before the prompt is sent.
 - `[ Image #n ]` button under each sent prompt that carried images, with a hover card showing the thumbnail and a side pane for a larger view (Esc closes it).
 - `↗ original` in the hover card and `o` in the pane open the pasted file at full size in the system viewer.
 - Real pictures where Claude Code draws them (Ghostty, kitty, or any terminal with `CLAUDE_CODE_FORCE_TERMINAL_IMAGES`), colored half blocks everywhere else, including iTerm2 and Herdr; `IMAGE_PEEK_RENDERER` overrides the choice.

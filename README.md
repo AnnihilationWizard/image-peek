@@ -10,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License"></a>
   <a href="https://code.claude.com/docs"><img src="https://img.shields.io/badge/Platform-Claude%20Code-D97757.svg" alt="Platform: Claude Code"></a>
   <a href="hooks/register.tsx"><img src="https://img.shields.io/badge/Type-Function%20hooks%20mod-6E7681.svg" alt="Function hooks mod"></a>
-  <a href="tests/image-peek.test.tsx"><img src="https://img.shields.io/badge/Tests-15%20passing-3FB950.svg" alt="15 tests passing"></a>
+  <a href="tests/image-peek.test.tsx"><img src="https://img.shields.io/badge/Tests-16%20passing-3FB950.svg" alt="16 tests passing"></a>
 </p>
 
 <p align="center">
@@ -34,7 +34,7 @@ When you paste an image into Claude Code, the prompt shows a bare `[Image #1]` t
 
 ## Features
 
-- **Thumbnails above the prompt:** Each `[Image #n]` in the prompt box gets a tile with its number, right after you paste. Tiles keep the picture's shape and shrink to fit; extra ones become `+N`.
+- **Thumbnails above the prompt:** Each `[Image #n]` in the prompt box gets a tile with its number, right after you paste. Tiles keep the picture's shape and shrink to fit; extra ones become `+N`. Click a tile's `↗ #n` to open the image before you send.
 - **Preview under sent prompts:** A prompt you sent with images gets an `[ Image #n ]` button. Hover it for a thumbnail; press it to open a larger view in a side pane (Esc closes it).
 - **Open the original:** `↗ original` in the hover card, or `o` in the pane, opens the pasted file at full size in the system viewer (Preview on macOS).
 - **Works in any terminal:** Where Claude Code draws pictures (Ghostty, kitty) you get the real picture. Everywhere else (iTerm2, Terminal.app, WezTerm, Herdr, VS Code) you get a thumbnail drawn in colored half blocks.
@@ -79,7 +79,7 @@ Once installed, there is nothing to configure. Paste an image into the prompt an
 
 | Where | What you can do |
 | --- | --- |
-| Above the prompt | See each pasted image with its `#n`. The row clears when you send the prompt or delete the tags. |
+| Above the prompt | See each pasted image. Click `↗ #n` under a tile to open the original. The row clears when you send the prompt or delete the tags. |
 | Under a sent prompt | Hover `[ Image #n ]` for a thumbnail. Press it, or `⤢ zoom` in the card, to open the side pane. |
 | Hover card | `↗ original` opens the pasted file in the system viewer. |
 | Side pane | `o` or `↗ open original` opens the file; `Esc` closes the pane. |

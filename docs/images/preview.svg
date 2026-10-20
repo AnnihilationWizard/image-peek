@@ -69,7 +69,7 @@
     <!-- Band above the prompt -->
     <rect x="512" y="380" width="128" height="96" rx="8" fill="none" stroke="#6e7681"/>
     <use href="#pic" x="522" y="388" width="108" height="66"/>
-    <text x="566" y="470" class="dim">#2</text>
+    <text x="554" y="470" class="dim">↗ #2</text>
     <line x1="512" y1="486" x2="936" y2="486" stroke="#30363d"/>
     <text x="512" y="512"><tspan class="fg">❯</tspan><tspan class="fg" dx="8">and here?</tspan><tspan class="tag" dx="8">[Image #2]</tspan></text>
     <line x1="512" y1="528" x2="936" y2="528" stroke="#30363d"/>

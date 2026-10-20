@@ -270,7 +270,7 @@ export const register: Register = on => {
     if (list.length === 0) return next(e)
 
     const el = $.ui.resolve(e)
-    const { Box, Text } = el
+    const { Box, Button, Text } = el
     const cells = fitRow(list.map(image => image.size), e.props.maxRows, e.props.bodyColumns)
     if (cells.length === 0) return next(e)
     const shown = list.slice(0, cells.length)
@@ -284,7 +284,12 @@ export const register: Register = on => {
           {shown.map((image, i) => (
             <Box key={`tile-${image.n}`} flexDirection="column" alignItems="center" borderStyle="round" borderDimColor>
               {picture(el, image, cells[i]!, `draft-${image.n}`, drawn[i] ?? null, 'no preview')}
-              <Text dimColor>#{image.n}</Text>
+              {/* The picture itself takes no clicks, so its label is the button that opens it. */}
+              {image.path === null ? (
+                <Text dimColor>#{image.n}</Text>
+              ) : (
+                <Button key={`image-peek:draft:${image.n}`} label={`↗ #${image.n}`} plain dimColor onPress={() => openOriginal($, image)} />
+              )}
             </Box>
           ))}
           {hidden > 0 && <Text dimColor>+{hidden}</Text>}
