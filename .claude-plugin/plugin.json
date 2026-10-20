@@ -1,9 +1,14 @@
 {
   "name": "image-peek",
-  "version": "0.1.0",
-  "description": "See the images you paste: thumbnails above the prompt, and an image button under each sent prompt that opens it large",
-  "author": { "name": "AnnihilationWizard", "url": "https://github.com/AnnihilationWizard" },
+  "version": "1.0.0",
+  "description": "See the images you paste into Claude Code: thumbnails above the prompt, and an image button under each sent prompt that opens it large",
+  "author": {
+    "name": "AnnihilationWizard",
+    "url": "https://github.com/AnnihilationWizard"
+  },
+  "homepage": "https://github.com/AnnihilationWizard/image-peek",
+  "repository": "https://github.com/AnnihilationWizard/image-peek",
   "license": "MIT",
-  "keywords": ["images", "paste", "preview", "thumbnails", "mod", "terminal"],
+  "keywords": ["claude-code", "mod", "images", "paste", "preview", "thumbnails"],
   "types": "./types/index.d.ts"
 }

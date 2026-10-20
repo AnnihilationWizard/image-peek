@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">image-peek before and after</title>
+  <desc id="desc">Left: a Claude Code session where a pasted image shows only as an [Image #1] tag, in the prompt and in the sent prompt. Right: the same session with image-peek, where a thumbnail tile labelled #1 sits above the prompt, and the sent prompt has an Image #1 button whose hover card shows the picture with zoom and original buttons.</desc>
+  <defs>
+    <!-- A small screenshot-like picture, reused for every thumbnail. -->
+    <symbol id="pic" viewBox="0 0 160 100">
+      <rect width="160" height="100" fill="#dbe9f0"/>
+      <rect width="160" height="14" fill="#f4f8fa"/>
+      <rect x="6" y="4" width="22" height="6" rx="2" fill="#2aa1b3"/>
+      <rect x="60" y="3" width="40" height="8" rx="3" fill="#ffffff"/>
+      <rect x="0" y="14" width="30" height="86" fill="#c9e0ea"/>
+      <rect x="5" y="22" width="20" height="5" rx="2" fill="#8fb7c6"/>
+      <rect x="5" y="32" width="20" height="5" rx="2" fill="#ffffff"/>
+      <rect x="5" y="42" width="20" height="5" rx="2" fill="#8fb7c6"/>
+      <rect x="34" y="20" width="40" height="74" rx="3" fill="#eef5f8"/>
+      <rect x="38" y="25" width="32" height="10" rx="2" fill="#ffffff"/>
+      <rect x="38" y="39" width="32" height="10" rx="2" fill="#ffffff"/>
+      <rect x="38" y="53" width="32" height="10" rx="2" fill="#ffffff"/>
+      <rect x="80" y="20" width="50" height="10" rx="3" fill="#ffffff"/>
+      <rect x="80" y="36" width="34" height="8" rx="3" fill="#ffffff"/>
+      <rect x="80" y="50" width="50" height="10" rx="3" fill="#ffffff"/>
+      <rect x="80" y="80" width="50" height="14" rx="3" fill="#ffffff"/>
+      <rect x="118" y="83" width="10" height="8" rx="2" fill="#2aa1b3"/>
+      <rect x="134" y="20" width="22" height="74" rx="3" fill="#eef5f8"/>
+    </symbol>
+  </defs>
+  <style>
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 14px; }
+    .label { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; }
+    .fg { fill: #e6edf3; }
+    .dim { fill: #8b949e; }
+    .tag { fill: #a5d6ff; }
+    .accent { fill: #d97757; }
+  </style>
+  <rect width="960" height="560" rx="14" fill="#0d1117"/>
+  <rect x="0.5" y="0.5" width="959" height="559" rx="14" fill="none" stroke="#30363d"/>
+  <circle cx="24" cy="22" r="6" fill="#ff5f57"/>
+  <circle cx="44" cy="22" r="6" fill="#febc2e"/>
+  <circle cx="64" cy="22" r="6" fill="#28c840"/>
+  <line x1="480" y1="44" x2="480" y2="536" stroke="#30363d"/>
+
+  <!-- Before -->
+  <text x="32" y="70" class="label" fill="#f85149">BEFORE</text>
+  <g class="mono">
+    <text x="32" y="112"><tspan class="dim">&gt;</tspan><tspan class="fg" dx="8">why is the header misaligned</tspan></text>
+    <text x="48" y="136" class="tag">[Image #1]</text>
+    <text x="32" y="176"><tspan class="accent">⏺</tspan><tspan class="fg" dx="8">The tabs sit 2px lower than the</tspan></text>
+    <text x="48" y="200" class="fg">logo because …</text>
+    <text x="48" y="248" class="dim">No way to see the picture again.</text>
+    <line x1="32" y1="440" x2="456" y2="440" stroke="#30363d"/>
+    <text x="32" y="470"><tspan class="fg">❯</tspan><tspan class="fg" dx="8">and here?</tspan><tspan class="tag" dx="8">[Image #2]</tspan></text>
+    <line x1="32" y1="490" x2="456" y2="490" stroke="#30363d"/>
+    <text x="48" y="516" class="dim">Only the tag shows while you write.</text>
+  </g>
+
+  <!-- After -->
+  <text x="512" y="70" class="label" fill="#3fb950">WITH IMAGE-PEEK</text>
+  <g class="mono">
+    <text x="512" y="112"><tspan class="dim">&gt;</tspan><tspan class="fg" dx="8">why is the header misaligned</tspan></text>
+    <text x="528" y="136" class="tag">[Image #1]</text>
+    <rect x="528" y="148" width="120" height="24" rx="3" fill="#161b22" stroke="#6e7681"/>
+    <text x="538" y="165" class="fg">[ Image #1 ]</text>
+    <!-- Hover card under the button -->
+    <rect x="528" y="180" width="236" height="150" rx="8" fill="none" stroke="#6e7681"/>
+    <use href="#pic" x="540" y="190" width="212" height="106"/>
+    <text x="544" y="318" class="dim">[ ⤢ zoom ]</text>
+    <text x="640" y="318" class="dim">[ ↗ original ]</text>
+    <text x="512" y="364"><tspan class="accent">⏺</tspan><tspan class="fg" dx="8">The tabs sit 2px lower than …</tspan></text>
+    <!-- Band above the prompt -->
+    <rect x="512" y="380" width="128" height="96" rx="8" fill="none" stroke="#6e7681"/>
+    <use href="#pic" x="522" y="388" width="108" height="66"/>
+    <text x="566" y="470" class="dim">#2</text>
+    <line x1="512" y1="486" x2="936" y2="486" stroke="#30363d"/>
+    <text x="512" y="512"><tspan class="fg">❯</tspan><tspan class="fg" dx="8">and here?</tspan><tspan class="tag" dx="8">[Image #2]</tspan></text>
+    <line x1="512" y1="528" x2="936" y2="528" stroke="#30363d"/>
+  </g>
+</svg>

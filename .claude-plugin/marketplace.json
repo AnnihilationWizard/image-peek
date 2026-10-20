@@ -1,0 +1,9 @@
+{
+  "name": "image-peek",
+  "description": "A Claude Code mod that shows the images you paste: thumbnails above the prompt and a preview under each sent prompt",
+  "owner": {
+    "name": "AnnihilationWizard",
+    "url": "https://github.com/AnnihilationWizard"
+  },
+  "plugins": [{ "name": "image-peek", "source": "./" }]
+}
