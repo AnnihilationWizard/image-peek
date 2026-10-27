@@ -369,3 +369,87 @@ test('sending a prompt with an image keeps it in the store with its session id',
 
   expect(store.get('sent')).toMatchObject([{ text: 'look [Image #1]', sessionId: 'sess-1', images: [{ n: 1, path: `${DIR}/1.png` }] }])
 })
+
+// Windows Terminal on Windows: half blocks. The temp folder's apostrophe would end a quoted
+// PowerShell string if the path went into the script as is.
+const WINDOWS_TEMP = "C:\\Users\\O'Brien\\AppData\\Local\\Temp"
+const WINDOWS: Record<string, string> = { OS: 'Windows_NT', TEMP: WINDOWS_TEMP, WT_SESSION: '1' }
+const WINDOWS_SESSION = `${WINDOWS_TEMP}/claude/-work/win-1`
+const WINDOWS_DIR = `${WINDOWS_SESSION}/images`
+
+/** The script a `powershell.exe -EncodedCommand` run was given (base64 of UTF-16LE text). */
+const decodedScript = (argv: string[]) => String.fromCharCode(...new Uint16Array(Uint8Array.fromBase64(argv.at(-1)!).buffer))
+const base64Of = (text: string) => new TextEncoder().encode(text).toBase64()
+
+/** The engine on Windows, whose paste cache holds 1.jpg; `opens` says whether rundll32 succeeds. */
+function windowsEngine(on: On, runs: string[][], opens = true) {
+  const draft = 'look [Image #1]'
+  on('session.start', () => ({ cwd: 'C:\\work' }))
+  on('prompt.read', () => ({ value: { text: draft, cursor: draft.length } }))
+  on('env.get', ($, e) => ({ value: WINDOWS[e.name] }))
+  on('process.run', ($, e) => {
+    runs.push([...e.argv])
+    return e.argv[0] === 'rundll32.exe' && !opens ? { value: { ...ran('').value, exitCode: 1 } } : ran('')
+  })
+  on('session.id', () => ({ value: 'win-1' }))
+  on('fs.list', ($, e) => ({
+    value: e.path.endsWith(WINDOWS_DIR) ? [{ name: '1.jpg', kind: 'file', size: 10, mtimeMs: 0, isLink: false }] : [dirEntry],
+  }))
+  // The PowerShell copy exists once made. The test host, not being Windows, takes C:\ paths as
+  // relative to the mod's folder, so they are matched by their end.
+  on('fs.exists', ($, e) => ({
+    value:
+      e.path.endsWith(WINDOWS_DIR) || (e.path.endsWith(`${WINDOWS_SESSION}/image-peek-1.png`) && runs.some(argv => argv[0] === 'powershell.exe')),
+  }))
+  on('fs.read', () => ({ value: { base64: RED_BLUE } }))
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('prompt.submit', ($, e) => ({ text: e.text }))
+  on('ui.render', ($, e) => {
+    const { Text } = $.ui.resolve(e)
+    return <Text>engine row</Text>
+  })
+}
+
+test('on Windows a JPG paste is converted with PowerShell and its original opens in the default viewer', async ($, on) => {
+  const clock = mock.clock(on)
+  const runs: string[][] = []
+  windowsEngine(on, runs)
+
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: 'C:\\work' })
+  await clock.advance(200)
+
+  const convert = runs.find(argv => argv[0] === 'powershell.exe')!
+  expect(convert.slice(0, 4)).toEqual(['powershell.exe', '-NoProfile', '-NonInteractive', '-EncodedCommand'])
+  const script = decodedScript(convert)
+  // The paths reach the script only as base64, with backslashes for .NET.
+  expect(script).not.toContain("O'Brien")
+  expect(script).toContain(base64Of(`${WINDOWS_TEMP}\\claude\\-work\\win-1\\images\\1.jpg`))
+  expect(script).toContain(base64Of(`${WINDOWS_TEMP}\\claude\\-work\\win-1\\image-peek-1.png`))
+  expect(script).toMatch(/Max\(\$image.Width, \$image.Height\)/)
+  expect(runs.some(argv => argv[0] === 'sips')).toBe(false)
+
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  expect(await ui.find({ type: 'Raster' })).toBeDefined()
+  await ui.press({ key: 'image-peek:draft:1' })
+  expect(runs.at(-1)).toEqual(['rundll32.exe', 'url.dll,FileProtocolHandler', `${WINDOWS_TEMP}\\claude\\-work\\win-1\\images\\1.jpg`])
+  expect(runs.some(argv => argv[0] === 'open' || argv[0] === 'xdg-open')).toBe(false)
+})
+
+test('on Windows a file the default viewer cannot open is toasted, without trying open or xdg-open', async ($, on) => {
+  const clock = mock.clock(on)
+  const runs: string[][] = []
+  const toasts: string[] = []
+  windowsEngine(on, runs, false)
+  on('ui.toast', ($, e) => {
+    toasts.push(e.text)
+    return { value: undefined }
+  })
+
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: 'C:\\work' })
+  await clock.advance(200)
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  await ui.press({ key: 'image-peek:draft:1' })
+  expect(runs.at(-1)?.[0]).toBe('rundll32.exe')
+  expect(runs.some(argv => argv[0] === 'open' || argv[0] === 'xdg-open')).toBe(false)
+  expect(toasts).toEqual([`image-peek: could not open ${WINDOWS_DIR}/1.jpg`])
+})

@@ -37,7 +37,7 @@ let pictures = false
 const sizes = new Map<string, Size | null>()
 // Files whose first bytes aren't a PNG's: they never will be, so they aren't read again.
 const notPng = new Set<string>()
-// Source files sips couldn't convert, so a broken paste isn't retried on every poll.
+// Source files that couldn't be converted, so a broken paste isn't retried on every poll.
 const unconvertible = new Set<string>()
 // Decoded copies for half blocks, by `${side}:${path}`; null when the file can't be decoded.
 const thumbs = new Map<string, Thumb | null>()
@@ -69,11 +69,15 @@ async function hintHerdr($: EngineInterface, env: Record<string, string | undefi
   await $.store.set('herdrHintShown', true)
 }
 
+const onWindows = async ($: EngineInterface) => (await $.env.get('OS')) === 'Windows_NT'
+// Paths here are joined with /, onto a Windows base that uses \; Windows tools get \ throughout.
+const windowsPath = (path: string) => path.replace(/\//g, '\\')
+
 // Claude Code keeps its temp files in <base>/claude-<uid>, or <base>\claude on Windows. The base
 // is CLAUDE_CODE_TMPDIR when set, else /tmp (%TEMP% on Windows).
 async function tempRoot($: EngineInterface): Promise<string | undefined> {
   const fromEnv = await $.env.get('CLAUDE_CODE_TMPDIR')
-  if ((await $.env.get('OS')) === 'Windows_NT') {
+  if (await onWindows($)) {
     const base = fromEnv ?? (await $.env.get('TEMP'))
     return base === undefined ? undefined : `${base.replace(/[\\/]+$/, '')}/claude`
   }
@@ -102,13 +106,67 @@ async function imagesDir($: EngineInterface): Promise<string | undefined> {
 
 const sessionDirOf = (path: string) => path.replace(/\/images\/[^/]+$/, '')
 
-/** A shrunk PNG copy of `source` in the session folder, made once with sips (macOS only). */
-async function copyWithSips($: EngineInterface, source: string, out: string): Promise<string | undefined> {
+// UTF-8 text as base64, which a PowerShell script can hold in quotes whatever the text is.
+const base64Of = (text: string) => new TextEncoder().encode(text).toBase64()
+
+/**
+ * The PowerShell script that saves `source` as a PNG at `out`, its longest side at most COPY_SIDE.
+ * Both paths come in base64, so no quote or other character in them can change the script. It
+ * saves beside `out` and moves the copy into place, so a run cut short never leaves half a PNG.
+ */
+function shrinkScript(source: string, out: string): string {
+  const decode = (path: string) => `[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${base64Of(windowsPath(path))}'))`
+  return [
+    "$ErrorActionPreference = 'Stop'",
+    'Add-Type -AssemblyName System.Drawing',
+    `$source = ${decode(source)}`,
+    `$out = ${decode(out)}`,
+    "$part = $out + '.part'",
+    '$image = [Drawing.Image]::FromFile($source)',
+    'try {',
+    `  $scale = [Math]::Min(1.0, ${COPY_SIDE} / [Math]::Max($image.Width, $image.Height))`,
+    '  $width = [Math]::Max(1, [int][Math]::Round($image.Width * $scale))',
+    '  $height = [Math]::Max(1, [int][Math]::Round($image.Height * $scale))',
+    '  $copy = New-Object Drawing.Bitmap $width, $height',
+    '  try {',
+    '    $graphics = [Drawing.Graphics]::FromImage($copy)',
+    '    try {',
+    "      $graphics.InterpolationMode = 'HighQualityBicubic'",
+    '      $graphics.DrawImage($image, 0, 0, $width, $height)',
+    '    } finally { $graphics.Dispose() }',
+    '    $copy.Save($part, [Drawing.Imaging.ImageFormat]::Png)',
+    '  } finally { $copy.Dispose() }',
+    '} finally { $image.Dispose() }',
+    '[IO.File]::Delete($out)',
+    '[IO.File]::Move($part, $out)',
+  ].join('\n')
+}
+
+// -EncodedCommand takes the script as base64 of its UTF-16LE text, so it reaches PowerShell unquoted.
+function encodedCommand(script: string): string {
+  const bytes = new Uint8Array(script.length * 2)
+  for (let i = 0; i < script.length; i++) {
+    const unit = script.charCodeAt(i)
+    bytes[i * 2] = unit & 0xff
+    bytes[i * 2 + 1] = unit >> 8
+  }
+  return bytes.toBase64()
+}
+
+/**
+ * A shrunk PNG copy of `source` in the session folder, made once: with sips on macOS, with
+ * PowerShell and System.Drawing on Windows. Elsewhere, or for a format the tool can't read
+ * (WebP and HEIC on Windows), there is none.
+ */
+async function shrinkToPng($: EngineInterface, source: string, out: string): Promise<string | undefined> {
   if (await $.fs.exists(out)) return out
   if (unconvertible.has(source)) return undefined
-  const { exitCode } = await $.process
-    .run(['sips', '-s', 'format', 'png', '-Z', COPY_SIDE, source, '--out', out], { timeoutMs: 10_000 })
-    .catch(() => ({ exitCode: 1 }))
+  const windows = await onWindows($)
+  const argv = windows
+    ? ['powershell.exe', '-NoProfile', '-NonInteractive', '-EncodedCommand', encodedCommand(shrinkScript(source, out))]
+    : ['sips', '-s', 'format', 'png', '-Z', COPY_SIDE, source, '--out', out]
+  // PowerShell starts slowly, the first time after boot more so.
+  const { exitCode } = await $.process.run(argv, { timeoutMs: windows ? 20_000 : 10_000 }).catch(() => ({ exitCode: 1 }))
   if (exitCode === 0) return out
   unconvertible.add(source)
   return undefined
@@ -124,7 +182,7 @@ async function pngFor($: EngineInterface, dir: string, n: number): Promise<{ png
   const source = entries.find(entry => entry.kind === 'file' && entry.name.startsWith(`${n}.`))
   if (source === undefined) return undefined
   const original = `${dir}/${source.name}`
-  const converted = await copyWithSips($, original, `${sessionDirOf(png)}/image-peek-${n}.png`)
+  const converted = await shrinkToPng($, original, `${sessionDirOf(png)}/image-peek-${n}.png`)
   return converted === undefined ? undefined : { png: converted, original }
 }
 
@@ -149,10 +207,22 @@ async function describe($: EngineInterface, dir: string | undefined, n: number):
   return { n, path, size: sizes.get(path) ?? null, original }
 }
 
-/** Opens the original paste in the system's viewer (Preview on macOS), at full size. */
+/**
+ * Opens the original paste in the system's viewer (Preview on macOS, the default image app on
+ * Windows), at full size.
+ */
 async function openOriginal($: EngineInterface, image: PastedImage) {
   const file = image.original ?? image.path
   if (file == null) return
+  if (await onWindows($)) {
+    // Not explorer.exe, which exits 1 even when it opens the file, and not `cmd /c start`, where
+    // an & in the path would be read as a command.
+    const opened = await $.process
+      .run(['rundll32.exe', 'url.dll,FileProtocolHandler', windowsPath(file)], { timeoutMs: 10_000 })
+      .then(run => run.exitCode === 0, () => false)
+    if (!opened) $.ui.toast(`image-peek: could not open ${file}`)
+    return
+  }
   const opened = await $.process.run(['open', file], { timeoutMs: 10_000 }).then(run => run.exitCode === 0, () => false)
   if (!opened) {
     const viaXdg = await $.process.run(['xdg-open', file], { timeoutMs: 10_000 }).then(run => run.exitCode === 0, () => false)
@@ -162,7 +232,7 @@ async function openOriginal($: EngineInterface, image: PastedImage) {
 
 /**
  * The decoded copy half blocks are drawn from. A PNG over $.fs.read's 4 MiB cap (a large
- * screenshot) is shrunk with sips first, so it still gets blocks.
+ * screenshot) is shrunk first (on macOS and Windows), so it still gets blocks.
  */
 async function thumbFor($: EngineInterface, image: PastedImage, side: number): Promise<Thumb | null> {
   if (image.path === null) return null
@@ -171,7 +241,7 @@ async function thumbFor($: EngineInterface, image: PastedImage, side: number): P
   const readBytes = (path: string) => $.fs.read(path, { as: 'bytes' }).then(bytes => bytes.base64, () => undefined)
   let base64 = await readBytes(image.path)
   if (base64 === undefined) {
-    const small = await copyWithSips($, image.path, `${sessionDirOf(image.path)}/image-peek-small-${image.n}.png`)
+    const small = await shrinkToPng($, image.path, `${sessionDirOf(image.path)}/image-peek-small-${image.n}.png`)
     base64 = small === undefined ? undefined : await readBytes(small)
   }
   const thumb = base64 === undefined ? null : decodeThumb(Uint8Array.fromBase64(base64), side)
