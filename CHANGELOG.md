@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.0] - 2026-10-27
+
+- `↗ original` and `o` work on Windows: the pasted file opens in the default app for its type. Before, they always toasted `could not open`.
+- On Windows, JPEG, BMP, GIF and TIFF pastes, and screenshots over 4 MiB, get a preview: they are converted with PowerShell and System.Drawing. WebP and HEIC still show `no preview` there.
+- README: Windows behavior, including that Windows terminals get half-block thumbnails.
+
 ## [1.1.0] - 2026-10-20
 
 - Buttons under sent prompts come back after `/resume`, including `--fork-session`: sent prompts with images are now also kept in the mod's store (the last 500).
@@ -23,5 +29,6 @@ Initial release of image-peek by AnnihilationWizard.
 
 Adapted from jarrodwatts/claude-image-view and GGGODLIN/cc-mod-image-view (MIT). Built on Claude Code's early-access function-hooks mod API.
 
+[1.2.0]: https://github.com/AnnihilationWizard/image-peek/releases/tag/v1.2.0
 [1.1.0]: https://github.com/AnnihilationWizard/image-peek/releases/tag/v1.1.0
 [1.0.0]: https://github.com/AnnihilationWizard/image-peek/releases/tag/v1.0.0
