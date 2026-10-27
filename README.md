@@ -6,11 +6,11 @@
 </p>
 
 <p align="center">
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Version-1.1.0-green.svg" alt="Version 1.1.0"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Version-1.2.0-green.svg" alt="Version 1.2.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License"></a>
   <a href="https://code.claude.com/docs"><img src="https://img.shields.io/badge/Platform-Claude%20Code-D97757.svg" alt="Platform: Claude Code"></a>
   <a href="hooks/register.tsx"><img src="https://img.shields.io/badge/Type-Function%20hooks%20mod-6E7681.svg" alt="Function hooks mod"></a>
-  <a href="tests/image-peek.test.tsx"><img src="https://img.shields.io/badge/Tests-20%20passing-3FB950.svg" alt="20 tests passing"></a>
+  <a href="tests/image-peek.test.tsx"><img src="https://img.shields.io/badge/Tests-22%20passing-3FB950.svg" alt="22 tests passing"></a>
 </p>
 
 <p align="center">
@@ -36,9 +36,9 @@ When you paste an image into Claude Code, the prompt shows a bare `[Image #1]` t
 
 - **Thumbnails above the prompt:** Each `[Image #n]` in the prompt box gets a tile with its number, right after you paste. Tiles keep the picture's shape and shrink to fit; extra ones become `+N`. Click a tile's `↗ #n` to open the image before you send.
 - **Preview under sent prompts:** A prompt you sent with images gets an `[ Image #n ]` button. Hover it for a thumbnail; press it to open a larger view in a side pane (Esc closes it).
-- **Open the original:** `↗ original` in the hover card, or `o` in the pane, opens the pasted file at full size in the system viewer (Preview on macOS).
-- **Works in any terminal:** Where Claude Code draws pictures (Ghostty, kitty) you get the real picture. Everywhere else (iTerm2, Terminal.app, WezTerm, Herdr, VS Code) you get a thumbnail drawn in colored half blocks.
-- **Any image format:** PNG is drawn as is. JPEG, WebP, HEIC and other formats are converted once with macOS `sips`, and screenshots over 4 MiB are shrunk for the block thumbnail.
+- **Open the original:** `↗ original` in the hover card, or `o` in the pane, opens the pasted file at full size in the system viewer (Preview on macOS, the default image app on Windows).
+- **Works in any terminal:** Where Claude Code draws pictures (Ghostty, kitty) you get the real picture. Everywhere else (iTerm2, Terminal.app, WezTerm, Herdr, VS Code, Windows Terminal) you get a thumbnail drawn in colored half blocks.
+- **Any image format:** PNG is drawn as is. JPEG, WebP, HEIC and other formats are converted once, with `sips` on macOS and PowerShell on Windows, and screenshots over 4 MiB are shrunk for the block thumbnail.
 - **No false previews:** A typed `[Image #1]` with no attached image gets no button, and two sent prompts with the same words but different images get none rather than the wrong one.
 
 ## Install
@@ -89,8 +89,8 @@ Hover and clicks need Claude Code's fullscreen layout, which is on by default. W
 ### Limitations
 
 - Only prompts sent while the mod (1.1.0 or later) is loaded get buttons. They come back after `/resume`, including `--fork-session`, as long as Claude Code's paste cache still holds the images: it is a temp folder that a reboot empties, and then the buttons are left out.
-- Converting non-PNG images and shrinking large screenshots uses `sips`, so on Linux and Windows those images show `no preview`. PNG pastes work everywhere.
-- Opening the original runs `open` (macOS) or `xdg-open` (Linux).
+- Converting non-PNG images and shrinking large screenshots uses `sips` on macOS and PowerShell with System.Drawing on Windows. On Linux those images show `no preview`, and on Windows so do WebP and HEIC, which System.Drawing can't read. PNG pastes work everywhere.
+- Opening the original runs `open` (macOS) or `xdg-open` (Linux); on Windows the file opens in the default app for its type.
 - The desktop app already previews pasted images, so the mod draws nothing there.
 - Labels are in English.
 
@@ -104,6 +104,9 @@ Claude Code, not the mod, decides whether a terminal gets real pictures: it draw
 | iTerm2, Terminal.app, WezTerm, VS Code, most others | Colored half blocks |
 | Herdr | Colored half blocks, or real pictures with `CLAUDE_CODE_FORCE_TERMINAL_IMAGES=1` when Herdr runs in Ghostty or kitty |
 | Inside tmux or screen | Colored half blocks |
+| Windows Terminal and other Windows terminals | Colored half blocks |
+
+On Windows the thumbnails are half blocks: Ghostty has no Windows build, and kitty does not run natively on Windows.
 
 `CLAUDE_CODE_FORCE_TERMINAL_IMAGES=1` makes Claude Code draw pictures in any terminal. Set it only when the terminal supports the kitty graphics protocol's Unicode placeholders; otherwise the tile is a grid of colored squares. In Herdr, the mod shows this hint once.
 
