@@ -6,11 +6,11 @@
 </p>
 
 <p align="center">
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Version-1.2.0-green.svg" alt="Version 1.2.0"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Version-1.2.1-green.svg" alt="Version 1.2.1"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License"></a>
   <a href="https://code.claude.com/docs"><img src="https://img.shields.io/badge/Platform-Claude%20Code-D97757.svg" alt="Platform: Claude Code"></a>
   <a href="hooks/register.tsx"><img src="https://img.shields.io/badge/Type-Function%20hooks%20mod-6E7681.svg" alt="Function hooks mod"></a>
-  <a href="tests/image-peek.test.tsx"><img src="https://img.shields.io/badge/Tests-22%20passing-3FB950.svg" alt="22 tests passing"></a>
+  <a href="tests/image-peek.test.tsx"><img src="https://img.shields.io/badge/Tests-23%20passing-3FB950.svg" alt="23 tests passing"></a>
 </p>
 
 <p align="center">
@@ -90,7 +90,7 @@ Hover and clicks need Claude Code's fullscreen layout, which is on by default. W
 
 - Only prompts sent while the mod (1.1.0 or later) is loaded get buttons. They come back after `/resume`, including `--fork-session`, as long as Claude Code's paste cache still holds the images: it is a temp folder that a reboot empties, and then the buttons are left out.
 - Converting non-PNG images and shrinking large screenshots uses `sips` on macOS and PowerShell with System.Drawing on Windows. On Linux those images show `no preview`, and on Windows so do WebP and HEIC, which System.Drawing can't read. PNG pastes work everywhere.
-- Opening the original runs `open` (macOS) or `xdg-open` (Linux); on Windows the file opens in the default app for its type.
+- Opening the original runs `open` (macOS) or `xdg-open` (Linux); on Windows the file opens in the default app for its type. A file no longer there, such as after a reboot empties the paste cache, shows `could not open`. On Windows a file that is there but cannot be opened may show no message, as `rundll32` does not report it.
 - The desktop app already previews pasted images, so the mod draws nothing there.
 - Labels are in English.
 

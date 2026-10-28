@@ -232,7 +232,7 @@ test('the open-original button opens the cached JPG paste, not its PNG copy', as
     value: isPath(e.path, DIR) ? [{ name: '1.jpg', kind: 'file', size: 10, mtimeMs: 0, isLink: false }] : [dirEntry],
   }))
   // The sips copy exists once made; 1.png never does.
-  on('fs.exists', ($, e) => ({ value: isPath(e.path, DIR) || (isPath(e.path, `${SESSION}/image-peek-1.png`) && runs.some(argv => argv[0] === 'sips')) }))
+  on('fs.exists', ($, e) => ({ value: isPath(e.path, DIR) || isPath(e.path, `${DIR}/1.jpg`) || (isPath(e.path, `${SESSION}/image-peek-1.png`) && runs.some(argv => argv[0] === 'sips')) }))
   on('fs.read', () => ({ value: { base64: RED_BLUE } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
   on('prompt.submit', ($, e) => ({ text: e.text }))
@@ -387,7 +387,7 @@ const decodedScript = (argv: string[]) => String.fromCharCode(...new Uint16Array
 const base64Of = (text: string) => new TextEncoder().encode(text).toBase64()
 
 /** The engine on Windows, whose paste cache holds 1.jpg; `opens` says whether rundll32 succeeds. */
-function windowsEngine(on: On, runs: string[][], opens = true) {
+function windowsEngine(on: On, runs: string[][], opens = true, isOriginalGone = false) {
   const draft = 'look [Image #1]'
   on('session.start', () => ({ cwd: 'C:\\work' }))
   on('prompt.read', () => ({ value: { text: draft, cursor: draft.length } }))
@@ -400,10 +400,12 @@ function windowsEngine(on: On, runs: string[][], opens = true) {
   on('fs.list', ($, e) => ({
     value: isPath(e.path, WINDOWS_DIR) ? [{ name: '1.jpg', kind: 'file', size: 10, mtimeMs: 0, isLink: false }] : [dirEntry],
   }))
-  // The PowerShell copy exists once made.
+  // The PowerShell copy exists once made; the original is there unless `isOriginalGone`.
   on('fs.exists', ($, e) => ({
     value:
-      isPath(e.path, WINDOWS_DIR) || (isPath(e.path, `${WINDOWS_SESSION}/image-peek-1.png`) && runs.some(argv => argv[0] === 'powershell.exe')),
+      isPath(e.path, WINDOWS_DIR) ||
+      (isPath(e.path, `${WINDOWS_DIR}/1.jpg`) && !isOriginalGone) ||
+      (isPath(e.path, `${WINDOWS_SESSION}/image-peek-1.png`) && runs.some(argv => argv[0] === 'powershell.exe')),
   }))
   on('fs.read', () => ({ value: { base64: RED_BLUE } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
@@ -455,5 +457,23 @@ test('on Windows a file the default viewer cannot open is toasted, without tryin
   await ui.press({ key: 'image-peek:draft:1' })
   expect(runs.at(-1)?.[0]).toBe('rundll32.exe')
   expect(runs.some(argv => argv[0] === 'open' || argv[0] === 'xdg-open')).toBe(false)
+  expect(toasts).toEqual([`image-peek: could not open ${WINDOWS_DIR}/1.jpg`])
+})
+
+test('an original that is gone is toasted, without starting a viewer', async ($, on) => {
+  const clock = mock.clock(on)
+  const runs: string[][] = []
+  const toasts: string[] = []
+  windowsEngine(on, runs, true, true)
+  on('ui.toast', ($, e) => {
+    toasts.push(e.text)
+    return { value: undefined }
+  })
+
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: 'C:\\work' })
+  await clock.advance(200)
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  await ui.press({ key: 'image-peek:draft:1' })
+  expect(runs.some(argv => ['rundll32.exe', 'open', 'xdg-open'].includes(argv[0] ?? ''))).toBe(false)
   expect(toasts).toEqual([`image-peek: could not open ${WINDOWS_DIR}/1.jpg`])
 })

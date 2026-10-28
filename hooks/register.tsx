@@ -214,6 +214,12 @@ async function describe($: EngineInterface, dir: string | undefined, n: number):
 async function openOriginal($: EngineInterface, image: PastedImage) {
   const file = image.original ?? image.path
   if (file == null) return
+  // A viewer may not say it failed (rundll32 exits 0 anyway), so a file that is gone, as the paste
+  // cache is emptied by a reboot, is reported here on every OS.
+  if (!(await $.fs.exists(file).catch(() => false))) {
+    $.ui.toast(`image-peek: could not open ${file}`)
+    return
+  }
   if (await onWindows($)) {
     // Not explorer.exe, which exits 1 even when it opens the file, and not `cmd /c start`, where
     // an & in the path would be read as a command.

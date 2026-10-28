@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.1] - 2026-10-28
+
+- An original that is no longer there, such as after a reboot empties Claude Code's paste cache, toasts `could not open` without starting a viewer. On Windows, `rundll32` exits 0 even when it cannot open a file, so before, nothing was shown.
+- Tests: fs paths are matched the way each OS resolves them, so the tests also pass on Windows. Before, 12 of them failed there.
+
 ## [1.2.0] - 2026-10-27
 
 - `↗ original` and `o` work on Windows: the pasted file opens in the default app for its type. Before, they always toasted `could not open`.
@@ -29,6 +34,7 @@ Initial release of image-peek by AnnihilationWizard.
 
 Adapted from jarrodwatts/claude-image-view and GGGODLIN/cc-mod-image-view (MIT). Built on Claude Code's early-access function-hooks mod API.
 
+[1.2.1]: https://github.com/AnnihilationWizard/image-peek/releases/tag/v1.2.1
 [1.2.0]: https://github.com/AnnihilationWizard/image-peek/releases/tag/v1.2.0
 [1.1.0]: https://github.com/AnnihilationWizard/image-peek/releases/tag/v1.1.0
 [1.0.0]: https://github.com/AnnihilationWizard/image-peek/releases/tag/v1.0.0
