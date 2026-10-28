@@ -15,6 +15,11 @@ const GHOSTTY: Record<string, string> = { TERM_PROGRAM: 'ghostty' }
 const HERDR: Record<string, string> = { HERDR_ENV: '1', TERM_PROGRAM: 'herdr', TERM: 'xterm-256color', COLORTERM: 'truecolor' }
 const ran = (stdout: string) => ({ value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } })
 const dirEntry = { name: '-work', kind: 'dir', size: 0, mtimeMs: 0, isLink: false } as const
+// The test host resolves fs paths the way its own OS does: on Windows `/tmp/x` arrives as
+// `C:\tmp\x`, and elsewhere `C:\x` arrives under the mod's folder. So a path matches by its ending,
+// read with / only and without a drive letter.
+const slashes = (path: string) => path.replace(/\\/g, '/')
+const isPath = (got: string, want: string) => slashes(got).endsWith(slashes(want).replace(/^[A-Za-z]:/, ''))
 
 const BAND = {
   plugin: 'image-peek',
@@ -50,7 +55,7 @@ function engine(on: On, env: Record<string, string>, draft: () => string, opened
   })
   on('session.id', () => ({ value: 'sess-1' }))
   on('fs.list', () => ({ value: [dirEntry] }))
-  on('fs.exists', ($, e) => ({ value: e.path === DIR || e.path === `${DIR}/1.png` }))
+  on('fs.exists', ($, e) => ({ value: isPath(e.path, DIR) || isPath(e.path, `${DIR}/1.png`) }))
   on('fs.read', () => ({ value: { base64: RED_BLUE } }))
   on('ui.open', ($, e) => {
     opened.push(e.id)
@@ -224,10 +229,10 @@ test('the open-original button opens the cached JPG paste, not its PNG copy', as
   })
   on('session.id', () => ({ value: 'sess-1' }))
   on('fs.list', ($, e) => ({
-    value: e.path === DIR ? [{ name: '1.jpg', kind: 'file', size: 10, mtimeMs: 0, isLink: false }] : [dirEntry],
+    value: isPath(e.path, DIR) ? [{ name: '1.jpg', kind: 'file', size: 10, mtimeMs: 0, isLink: false }] : [dirEntry],
   }))
   // The sips copy exists once made; 1.png never does.
-  on('fs.exists', ($, e) => ({ value: e.path === DIR || (e.path === `${SESSION}/image-peek-1.png` && runs.some(argv => argv[0] === 'sips')) }))
+  on('fs.exists', ($, e) => ({ value: isPath(e.path, DIR) || (isPath(e.path, `${SESSION}/image-peek-1.png`) && runs.some(argv => argv[0] === 'sips')) }))
   on('fs.read', () => ({ value: { base64: RED_BLUE } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
   on('prompt.submit', ($, e) => ({ text: e.text }))
@@ -393,13 +398,12 @@ function windowsEngine(on: On, runs: string[][], opens = true) {
   })
   on('session.id', () => ({ value: 'win-1' }))
   on('fs.list', ($, e) => ({
-    value: e.path.endsWith(WINDOWS_DIR) ? [{ name: '1.jpg', kind: 'file', size: 10, mtimeMs: 0, isLink: false }] : [dirEntry],
+    value: isPath(e.path, WINDOWS_DIR) ? [{ name: '1.jpg', kind: 'file', size: 10, mtimeMs: 0, isLink: false }] : [dirEntry],
   }))
-  // The PowerShell copy exists once made. The test host, not being Windows, takes C:\ paths as
-  // relative to the mod's folder, so they are matched by their end.
+  // The PowerShell copy exists once made.
   on('fs.exists', ($, e) => ({
     value:
-      e.path.endsWith(WINDOWS_DIR) || (e.path.endsWith(`${WINDOWS_SESSION}/image-peek-1.png`) && runs.some(argv => argv[0] === 'powershell.exe')),
+      isPath(e.path, WINDOWS_DIR) || (isPath(e.path, `${WINDOWS_SESSION}/image-peek-1.png`) && runs.some(argv => argv[0] === 'powershell.exe')),
   }))
   on('fs.read', () => ({ value: { base64: RED_BLUE } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
